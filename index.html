@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meow Match</title>
+  <meta name="description" content="Meow Match – health-first breeding matches for pedigree cats. Swipe, check genetics, verify vaccination certificates.">
+  <meta name="theme-color" content="#fd5068">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar (desktop) -->
+    <aside class="side" aria-label="Your account and matches">
+      <a class="side-head" href="#profile">
+        <span class="avatar lg" id="me-avatar"></span>
+        <span><b id="me-name">Mochi</b><small id="me-sub">British Shorthair</small></span>
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="#discover" data-view="discover"><svg viewBox="0 0 24 24"><path d="M12 3c2 3 6 5 6 10a6 6 0 0 1-12 0c0-2 1-4 2-5 0 2 1 3 2 3 0-3 1-5 2-8Z"/></svg><span>Discover</span></a>
+        <a href="#matches" data-view="matches"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4Z"/></svg><span>Messages</span><b class="pill" data-count hidden></b></a>
+        <a href="#litter" data-view="litter"><svg viewBox="0 0 24 24"><circle cx="7" cy="8" r="3"/><circle cx="17" cy="8" r="3"/><circle cx="12" cy="17" r="3"/></svg><span>Litter preview</span></a>
+        <a href="#health" data-view="health"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg><span>Health check</span></a>
+        <a href="#profile" data-view="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>My cat</span></a>
+      </nav>
+      <button class="gold-cta" type="button" data-gold><svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5Z"/></svg><span><b data-gold-label>Get Gold</b><small>See who likes you</small></span></button>
+      <section class="side-matches">
+        <h2>New matches</h2>
+        <div class="strip" id="side-strip"></div>
+        <h2>Messages</h2>
+        <ul class="convos" id="side-convos"></ul>
+      </section>
+      <p class="side-foot">Sample data · photos from Unsplash</p>
+    </aside>
+
+    <!-- Mobile top bar -->
+    <header class="topbar">
+      <a class="brand" href="#discover" aria-label="Meow Match home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fd5068"/><stop offset="1" stop-color="#ff8a4c"/></linearGradient></defs><path d="M5 28 7.5 5l7 7h3l7-7L27 28Z" fill="url(#g)"/><circle cx="12" cy="19" r="1.8" fill="#fff"/><circle cx="20" cy="19" r="1.8" fill="#fff"/></svg>
+        <span>meow<b>match</b></span>
+      </a>
+      <button class="gold-chip" type="button" data-gold aria-label="Meow Match Gold"><svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5Z"/></svg><span data-gold-label>Get Gold</span></button>
+      <a class="avatar sm" id="me-avatar-top" href="#profile" aria-label="My cat"></a>
+    </header>
+
+    <main>
+      <!-- DISCOVER -->
+      <section class="view" id="view-discover" aria-label="Discover">
+        <div class="discover">
+          <div class="deck-wrap">
+            <div class="deck" id="deck" aria-live="polite"></div>
+            <div class="actions">
+              <button class="act undo" id="btn-undo" aria-label="Undo last swipe" title="Undo"><svg viewBox="0 0 24 24"><path d="M9 7H4V2M4 7a9 9 0 1 1-1 7"/></svg></button>
+              <button class="act nope" id="btn-nope" aria-label="Pass" title="Pass (←)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              <button class="act like" id="btn-like" aria-label="Like" title="Like (→)"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9A5.4 5.4 0 0 1 12 6a5.4 5.4 0 0 1 9.3 6C19 16.6 12 21 12 21Z"/></svg></button>
+              <button class="act info" id="btn-info" aria-label="Full profile" title="Profile (↑)"><svg viewBox="0 0 24 24"><path d="M12 11v6M12 7.5v.5"/><circle cx="12" cy="12" r="9"/></svg></button>
+            </div>
+          </div>
+
+          <aside class="filters card-ui">
+            <h2>Filters</h2>
+            <p class="muted small">Only cats that are safe to pair with <b id="f-for">Mochi</b>.</p>
+            <label class="field"><span>Breed</span><select id="f-breed"></select></label>
+            <label class="field"><span class="row-between">Distance <output id="f-km-out">40 km</output></span>
+              <input type="range" id="f-km" min="5" max="40" step="1"></label>
+            <label class="switch"><input type="checkbox" id="f-verified"><span class="track"></span><span>Verified vaccines only</span></label>
+            <details class="hidden-list" id="hidden-list">
+              <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/></svg><span><b id="hidden-count">0</b> hidden by safety rules</span></summary>
+              <ul id="hidden-items"></ul>
+            </details>
+          </aside>
+        </div>
+      </section>
+
+      <!-- MATCHES -->
+      <section class="view" id="view-matches" aria-label="Messages" hidden>
+        <div class="m-strip strip" id="m-strip"></div>
+        <div class="chat card-ui" id="chat"></div>
+      </section>
+
+      <!-- LITTER -->
+      <section class="view narrow" id="view-litter" aria-labelledby="h-litter" hidden>
+        <div class="page-head">
+          <div><h1 id="h-litter">Litter preview</h1><p class="muted">What kittens from these two could look like.</p></div>
+          <label class="field inline"><span>Partner</span><select id="l-partner"></select></label>
+        </div>
+        <div class="pair card-ui" id="l-pair"></div>
+        <div class="litter-grid">
+          <div class="card-ui"><h2>Kitten coats</h2><div id="l-rows"></div></div>
+          <div class="stats" id="l-stats"></div>
+        </div>
+      </section>
+
+      <!-- HEALTH -->
+      <section class="view narrow" id="view-health" aria-labelledby="h-health" hidden>
+        <div class="page-head"><div><h1 id="h-health">Health check</h1><p class="muted">Check a vaccine certificate before the first visit.</p></div></div>
+        <ol class="ladder" aria-label="Verification levels">
+          <li class="done"><i>1</i><b>Uploaded</b><span>Owner adds a photo</span></li>
+          <li class="done"><i>2</i><b>Checked</b><span>Automatic checks</span></li>
+          <li><i>3</i><b>Vet licence</b><span>Coming soon</span></li>
+          <li><i>4</i><b>Partner clinic</b><span>Coming soon</span></li>
+        </ol>
+        <div class="health-grid">
+          <form class="card-ui cert" id="cert-form" novalidate>
+            <div class="row-between wrap"><h2>Certificate details</h2>
+              <div class="samples"><button type="button" class="chip" data-sample="good">Genuine sample</button><button type="button" class="chip" data-sample="bad">Suspicious sample</button></div></div>
+            <div class="two">
+              <label class="field"><span>Cat name</span><input name="catName" autocomplete="off"></label>
+              <label class="field"><span>Microchip number</span><input name="microchip" inputmode="numeric" autocomplete="off"></label>
+              <label class="field"><span>Vaccine</span><select name="vaccineType"><option>FVRCP</option><option>Rabies</option><option>FeLV</option></select></label>
+              <label class="field"><span>Product</span><input name="vaccineBrand" list="brands" autocomplete="off"><datalist id="brands"></datalist></label>
+              <label class="field"><span>Date given</span><input type="date" name="dateGiven"></label>
+              <label class="field"><span>Next due</span><input type="date" name="nextDue"></label>
+              <label class="field"><span>Batch number</span><input name="batchNumber" autocomplete="off"></label>
+              <label class="field"><span>Vet licence no.</span><input name="vetLicense" autocomplete="off"></label>
+              <label class="field"><span>Vet name</span><input name="vetName" autocomplete="off"></label>
+              <label class="field"><span>Clinic</span><input name="clinic" autocomplete="off"></label>
+            </div>
+            <label class="switch"><input type="checkbox" name="hasBatchSticker"><span class="track"></span><span>Vial’s batch sticker is in the photo</span></label>
+            <label class="drop"><input type="file" id="cert-file" accept="image/*" class="sr-only">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+              <span id="drop-text"><b>Upload certificate photo</b><small>Optional · stays in your browser</small></span></label>
+            <button class="btn primary" type="submit">Run checks</button>
+          </form>
+          <div class="card-ui result" id="cert-result" aria-live="polite">
+            <div class="empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg><p>Fill in the certificate or load a sample to try it.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section class="view narrow" id="view-profile" aria-labelledby="h-profile" hidden>
+        <div class="profile">
+          <div class="preview card-ui">
+            <div class="preview-photo" id="p-photo"></div>
+            <div class="preview-body">
+              <p class="coat" id="p-coat"></p>
+              <label class="btn ghost small upload"><input type="file" id="p-file" accept="image/*" class="sr-only">Change photo</label>
+            </div>
+          </div>
+          <form class="card-ui" id="profile-form">
+            <h1 id="h-profile">Edit profile</h1>
+            <div class="two">
+              <label class="field"><span>Name</span><input name="name" required maxlength="30"></label>
+              <label class="field"><span>Sex</span><select name="sex"><option value="F">Female (queen)</option><option value="M">Male (stud)</option></select></label>
+              <label class="field"><span>Breed</span><select name="breed" id="p-breed"></select></label>
+              <label class="field"><span>Born</span><input type="date" name="birthDate" required></label>
+              <label class="field"><span>Microchip</span><input name="microchip" inputmode="numeric" maxlength="15"></label>
+              <label class="field"><span>Litters in last 12 months</span><input type="number" name="littersLast12mo" min="0" max="6"></label>
+            </div>
+            <h2>Coat</h2>
+            <p class="muted small">Pick what your cat looks like. Only choose “carries” if a DNA test showed it.</p>
+            <div class="genes" id="p-genes"></div>
+            <div class="row-btns">
+              <button class="btn primary" type="submit">Save changes</button>
+              <button class="btn ghost" type="button" id="btn-reset">Reset demo</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- Mobile tab bar -->
+    <nav class="tabbar" aria-label="Main">
+      <a href="#discover" data-view="discover" aria-label="Discover"><svg viewBox="0 0 24 24"><path d="M12 3c2 3 6 5 6 10a6 6 0 0 1-12 0c0-2 1-4 2-5 0 2 1 3 2 3 0-3 1-5 2-8Z"/></svg></a>
+      <a href="#litter" data-view="litter" aria-label="Litter preview"><svg viewBox="0 0 24 24"><circle cx="7" cy="8" r="3"/><circle cx="17" cy="8" r="3"/><circle cx="12" cy="17" r="3"/></svg></a>
+      <a href="#matches" data-view="matches" aria-label="Messages"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4Z"/></svg><b class="pill" data-count hidden></b></a>
+      <a href="#health" data-view="health" aria-label="Health check"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></a>
+      <a href="#profile" data-view="profile" aria-label="My cat"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></a>
+    </nav>
+  </div>
+
+  <dialog id="sheet"><div id="sheet-body"></div></dialog>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
