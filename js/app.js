@@ -3,6 +3,7 @@ import { checkPair, formatAge, BREEDS } from './rules.js';
 import { checkCertificate, readExif, KNOWN_VACCINES } from './certificate.js';
 import { catFace } from './catArt.js';
 import { CATS, DEFAULT_MY_CAT, OWNER_REPLIES } from './data.js';
+import { TEST_CARDS, chargeCard, formatCardNumber, formatCountdown, qrStatus, QR_LIFETIME } from './payments.js';
 
 const TODAY = new Date();
 const KEY = 'meowmatch.v2';
@@ -348,7 +349,7 @@ const PAY_METHODS = [
   { id: 'bank', name: 'Mobile banking', sub: 'Pay in your bank’s app',
     icon: '<path d="M3 9.5 12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>' },
 ];
-const METHOD_LABEL = { card: 'Card ending 4242', promptpay: 'PromptPay', truemoney: 'TrueMoney Wallet', bank: 'Mobile banking' };
+const METHOD_LABEL = { card: 'Card', promptpay: 'PromptPay', truemoney: 'TrueMoney Wallet', bank: 'Mobile banking' };
 
 /** A QR-looking pattern for the demo. It is not a real PromptPay code and can't be paid. */
 function demoQr(seed) {
@@ -362,17 +363,38 @@ function demoQr(seed) {
     <g fill="#111">${eye(0, 0)}${eye(0, n - 7)}${eye(n - 7, 0)}<path d="${cells.join('')}"/></g></svg>`;
 }
 
-function methodPanel(id, total) {
-  if (id === 'card') return `<div class="pay-panel">
-      <div class="card-visual"><span class="chip"></span><b>4242 4242 4242 4242</b><div><small>Test Cardholder</small><small>12/34</small></div></div>
-      <label class="field"><span>Card number</span><input value="4242 4242 4242 4242" readonly></label>
+function cardPanel(number) {
+  const shown = formatCardNumber(number);
+  return `<div class="pay-panel">
+      <div class="card-visual"><span class="chip"></span><b>${shown}</b><div><small>Test Cardholder</small><small>12/34</small></div></div>
+      <fieldset class="test-cards"><legend>Test card</legend>
+        ${TEST_CARDS.map((c) => `<label class="test-card"><input type="radio" name="testcard" value="${c.number}" ${c.number === number ? 'checked' : ''}>
+          <span><b>•••• ${c.number.slice(-4)}</b><small class="${c.outcome === 'success' ? 'good' : 'bad'}">${c.label}</small></span></label>`).join('')}
+      </fieldset>
       <div class="two"><label class="field"><span>Expiry</span><input value="12 / 34" readonly></label>
         <label class="field"><span>CVC</span><input value="123" readonly></label></div>
-      <label class="field"><span>Name on card</span><input value="Test Cardholder" readonly></label>
-      <p class="fine left">Test card filled in for the demo. Real card numbers can’t be typed here.</p></div>`;
-  if (id === 'promptpay') return `<div class="pay-panel qr-panel">${demoQr(total)}
-      <div><b>${thb(total)}</b><p class="muted small">Open your banking app, scan the code and confirm. The code expires in 10 minutes.</p>
-      <p class="fine left">Demo code. It can’t be scanned or paid.</p></div></div>`;
+      <p class="fine left">These work like Stripe’s test cards: each one always gives the same result. Real card numbers can’t be typed here.</p></div>`;
+}
+
+function qrPanel(total) {
+  return `<div class="pay-panel qr-panel" id="qr-panel">${demoQr(total)}
+      <div class="qr-info"><b>${thb(total)}</b>
+        <p class="qr-timer">Expires in <span id="qr-left">${formatCountdown(QR_LIFETIME)}</span></p>
+        <p class="muted small">Scan with any Thai banking app and confirm.</p>
+        <div class="sim"><span>Test it:</span>
+          <button type="button" class="chip-btn" data-qr="paid">Payment received</button>
+          <button type="button" class="chip-btn" data-qr="expire">Let it expire</button></div>
+      </div></div>`;
+}
+
+function qrExpiredPanel() {
+  return `<div class="pay-panel qr-expired"><div class="alert block">This code expired. No money was taken.</div>
+      <button type="button" class="btn ghost" data-qr="new">Get a new code</button></div>`;
+}
+
+function methodPanel(id, total) {
+  if (id === 'card') return cardPanel(TEST_CARDS[0].number);
+  if (id === 'promptpay') return qrPanel(total);
   if (id === 'truemoney') return `<div class="pay-panel"><p class="muted small">You’ll confirm the payment in the TrueMoney app, then come back here.</p>
       <p class="fine left">In this demo, Pay skips the app and goes straight to the result.</p></div>`;
   return `<div class="pay-panel"><div class="banks">${['K PLUS', 'SCB Easy', 'Krungthai NEXT', 'Bualuang mBanking'].map((b, i) =>
@@ -401,18 +423,66 @@ function openCheckout(plan, method = 'card') {
     </form>`);
   const form = $('#pay-form');
   $('#pay-back').addEventListener('click', () => openGold('upsell'));
+  const btn = $('#pay-btn');
+  const payLabel = `Pay ${thb(total)}`;
+  let qr = null; // { createdAt, timer }
+
+  const showError = (msg) => {
+    $('#pay-error')?.remove();
+    btn.insertAdjacentHTML('beforebegin', `<div class="alert block" id="pay-error" role="alert">${msg}</div>`);
+  };
+  const clearError = () => $('#pay-error')?.remove();
+  const stopQr = () => { if (qr) clearInterval(qr.timer); qr = null; };
+  const startQr = () => {
+    stopQr();
+    qr = { createdAt: Date.now() };
+    const tick = () => {
+      if (!document.body.contains(form)) return stopQr();
+      const left = QR_LIFETIME - (Date.now() - qr.createdAt) / 1000;
+      const el = $('#qr-left');
+      if (el) el.textContent = formatCountdown(left);
+      if (qrStatus(qr.createdAt, Date.now()) === 'expired') expireQr();
+    };
+    qr.timer = setInterval(tick, 1000);
+  };
+  const expireQr = () => {
+    stopQr(); clearError();
+    $('#pay-detail').innerHTML = qrExpiredPanel();
+    btn.hidden = true;
+  };
+  const showMethod = (m) => {
+    clearError(); stopQr();
+    $('#pay-detail').innerHTML = methodPanel(m, total);
+    btn.hidden = false; btn.disabled = false;
+    btn.textContent = m === 'promptpay' ? 'Check payment' : payLabel;
+    if (m === 'promptpay') startQr();
+  };
+  sheet.addEventListener('close', stopQr, { once: true });
+
   form.addEventListener('change', (e) => {
-    if (e.target.name === 'method') $('#pay-detail').innerHTML = methodPanel(e.target.value, total);
+    if (e.target.name === 'method') showMethod(e.target.value);
+    if (e.target.name === 'testcard') {
+      clearError();
+      $('.card-visual b').textContent = formatCardNumber(e.target.value);
+      btn.textContent = payLabel;
+    }
   });
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const m = form.elements.method.value;
-    const btn = $('#pay-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin"></span>Processing';
+  form.addEventListener('click', (e) => {
+    const q = e.target.closest('[data-qr]');
+    if (!q) return;
+    if (q.dataset.qr === 'paid') { stopQr(); finish('promptpay'); }
+    if (q.dataset.qr === 'expire') expireQr();
+    if (q.dataset.qr === 'new') showMethod('promptpay');
+  });
+
+  const busy = (label = 'Processing') => { btn.disabled = true; btn.innerHTML = `<span class="spin"></span>${label}`; };
+
+  function finish(m, extra = '') {
+    busy();
     setTimeout(() => {
+      if (!document.body.contains(form)) return;
       const liked = likedYou();
-      state.gold = { plan: plan.id, since: new Date().toISOString(), method: m, ref: `MM-${Date.now().toString(36).toUpperCase().slice(-6)}` };
+      state.gold = { plan: plan.id, since: new Date().toISOString(), method: m, label: extra || METHOD_LABEL[m], ref: `MM-${Date.now().toString(36).toUpperCase().slice(-6)}` };
       save(); renderSide();
       if (!$('#view-discover').hidden) renderDeck();
       openSheet(`<div class="gold-hero done"><span class="gold-mark">${ICON.crown}<b>Meow Match</b><i>GOLD</i></span>
@@ -421,19 +491,44 @@ function openCheckout(plan, method = 'card') {
           <dl class="facts receipt">
             <div><dt>Plan</dt><dd>${plan.months} month${plan.months > 1 ? 's' : ''}</dd></div>
             <div><dt>Paid</dt><dd>${thb(total)} (test)</dd></div>
-            <div><dt>Method</dt><dd>${METHOD_LABEL[m]}</dd></div>
+            <div><dt>Method</dt><dd>${state.gold.label}</dd></div>
             <div><dt>Reference</dt><dd>${state.gold.ref}</dd></div>
           </dl>
           ${liked.length ? `<button class="btn gold" data-likes-you>See who likes ${esc(me().name)} (${liked.length})</button>` : ''}
           <button class="btn ghost" data-close>Keep swiping</button></div>`);
-    }, 1300);
+    }, 1200);
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearError();
+    const m = form.elements.method.value;
+    if (m === 'card') {
+      const number = form.elements.testcard.value;
+      busy();
+      setTimeout(() => {
+        const r = chargeCard(number);
+        if (r.ok) return finish('card', `Card ending ${r.last4}`);
+        btn.disabled = false; btn.textContent = 'Try again';
+        showError(r.message);
+      }, 1100);
+    } else if (m === 'promptpay') {
+      busy('Checking');
+      setTimeout(() => {
+        btn.disabled = false; btn.textContent = 'Check payment';
+        showError('We haven’t received this payment yet. Scan the code and confirm in your banking app.');
+      }, 900);
+    } else {
+      const bank = form.elements.bank?.value;
+      finish(m, bank || METHOD_LABEL[m]);
+    }
   });
 }
 
 function openGoldManage() {
   const plan = PLANS.find((p) => p.id === state.gold.plan) || PLANS[0];
   openSheet(`<div class="gold-hero done"><span class="gold-mark">${ICON.crown}<b>Meow Match</b><i>GOLD</i></span>
-      <h2>You’re on Gold</h2><p>${plan.months}-month plan · ${thb(plan.monthly)}/mo · ${METHOD_LABEL[state.gold.method] || 'Test payment'}</p></div>
+      <h2>You’re on Gold</h2><p>${plan.months}-month plan · ${thb(plan.monthly)}/mo · ${state.gold.label || METHOD_LABEL[state.gold.method] || 'Test payment'}</p></div>
     <div class="sheet-body">
       <ul class="perks">${PERKS.map(([i, t]) => `<li><span><svg viewBox="0 0 24 24">${PERK_ICON[i]}</svg></span><div><b>${t}</b></div></li>`).join('')}</ul>
       <button class="btn gold" data-likes-you>See who likes ${esc(me().name)}</button>

@@ -19,7 +19,7 @@ Breeders in Thailand mostly find stud cats through Facebook groups and word of m
 | | |
 |---|---|
 | **Swipe deck** | Drag, buttons, or arrow keys. Tap a card for the full profile. Like or pass. A mutual like opens a match and a chat. Free to use: no stud fees or prices on profiles. |
-| **Meow Match Gold** | A Tinder Gold-style upgrade: see who already likes your cat (blurred until you upgrade), unlimited likes (free accounts get 5 a day), rewind, and a Gold badge. Paywall with 1/6/12-month plans and a checkout with four Thai payment methods: card, PromptPay QR, TrueMoney Wallet and mobile banking. **Test mode only:** the card form is pre-filled with a test card and can't be typed into, the QR is a fake pattern, and no money moves. |
+| **Meow Match Gold** | A Tinder Gold-style upgrade: see who already likes your cat (blurred until you upgrade), unlimited likes (free accounts get 5 a day), rewind, and a Gold badge. Paywall with 1/6/12-month plans and a checkout with four Thai payment methods: card, PromptPay QR, TrueMoney Wallet and mobile banking. **Test mode only**, modelled on Stripe's: three test cards give a fixed result each (success, declined, insufficient funds) with matching error messages; the PromptPay QR has a 10-minute countdown, a "check payment" step, and buttons to simulate payment or expiry. No money moves and real card numbers can't be entered. |
 | **Breeding guardrails** | A rules engine hides unsafe pairings and explains why: under 12 months, no FeLV/FIV test, Fold × Fold, unaccepted outcrosses, too many litters this year. |
 | **Litter preview** | A Mendelian genetics model (B/b/bl, D/d, A/a, L/l, X-linked O) predicts kitten coats with ♂/♀ split. Every kitten portrait is drawn from its genotype. |
 | **Blood-type risk** | Flags type-B queen × type-A tom pairings and calculates what share of kittens are at risk of neonatal isoerythrolysis. |
@@ -36,7 +36,7 @@ Breeders in Thailand mostly find stud cats through Facebook groups and word of m
 
 - **Vanilla JavaScript (ES modules), HTML and CSS.** No framework and no build step. It loads straight from GitHub Pages.
 - **Pure logic modules** (`genetics.js`, `rules.js`, `certificate.js`) with no DOM access, so the same code runs in the browser and in Node tests.
-- **Unit tests** with Node's built-in test runner: 30 tests, zero dependencies.
+- **Unit tests** with Node's built-in test runner: 38 tests, zero dependencies.
 - **CI:** GitHub Actions runs the tests on every push.
 - **Hand-rolled EXIF parser** that reads the JPEG APP1 segment and TIFF IFD0 to get `Software` and `DateTime`.
 - **Generated SVG portraits** for predicted kittens and for profiles without a photo: coat colour, tortie patches, tabby stripes, long-hair ruff and folded ears all come from the phenotype.
@@ -47,6 +47,7 @@ js/
   genetics.js     Punnett squares, X-linked orange, phenotype naming, litter prediction
   rules.js        Breeding guardrails (blocks vs warnings)
   certificate.js  Certificate consistency checks + EXIF reader
+  payments.js     Test-mode payment outcomes (test cards, QR expiry)
   catArt.js       SVG cat portraits from a phenotype
   data.js         Sample cats
   app.js          UI: routing, swipe deck, chat, views

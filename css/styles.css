@@ -405,6 +405,28 @@ dialog[open] { animation: rise .25s cubic-bezier(.2, .8, .2, 1); }
 .card-visual b { font: 600 18px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; }
 .card-visual div { display: flex; justify-content: space-between; font-size: 12px; opacity: .75; text-transform: uppercase; letter-spacing: .06em; }
 
+/* ── Test cards + QR states ── */
+.test-cards { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.test-cards legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.test-card { cursor: pointer; }
+.test-card input { position: absolute; opacity: 0; pointer-events: none; }
+.test-card span { display: grid; gap: 2px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; transition: border-color .15s, background .15s; }
+.test-card b { font: 600 13.5px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.test-card small { font-size: 12px; font-weight: 700; }
+.test-card small.good { color: light-dark(#087556, #63e6be); }
+.test-card small.bad { color: light-dark(#c92a2a, #ff8787); }
+.test-card input:checked + span { border-color: var(--ink); background: var(--raised); }
+.test-card input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
+.qr-info { display: grid; gap: 6px; }
+.qr-timer { margin: 0; font-size: 13.5px; font-weight: 700; }
+.qr-timer span { font-variant-numeric: tabular-nums; }
+.qr-info p.muted { margin: 0; }
+.sim { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.chip-btn { padding: 6px 10px; border: 1px dashed var(--line); border-radius: 99px; background: none; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+.chip-btn:hover { border-color: var(--ink); }
+.qr-expired { gap: 12px; }
+#pay-error { margin: 0; }
+
 /* ── Checkout ── */
 .checkout { gap: 16px; padding-top: 18px; }
 .checkout .back { justify-self: start; display: inline-flex; align-items: center; gap: 2px; padding: 6px 10px 6px 4px; border: 0; border-radius: 99px; background: none; color: var(--muted); font-weight: 700; cursor: pointer; }
@@ -485,6 +507,9 @@ dialog[open] { animation: rise .25s cubic-bezier(.2, .8, .2, 1); }
   .choice code { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 4px; }
   .plans { gap: 6px; }
   .qr-panel { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .sim { justify-content: center; }
+  .test-cards { gap: 6px; }
+  .test-card span { padding: 9px 8px; }
   .banks { grid-template-columns: 1fr 1fr; }
   .pair { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
   .parent, .parent.right { flex-direction: column; text-align: center; }
